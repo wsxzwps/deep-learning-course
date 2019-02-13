@@ -53,7 +53,7 @@ def fc_backward(dout, cache):
     ###########################################################################
     dx = np.dot(dout, w.T)
     dw = np.dot(x.T, dout)
-    db = np.average(dout)
+    db = np.sum(dout, axis=0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -174,12 +174,13 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # Referencing the original paper (https://arxiv.org/abs/1502.03167)   #
         # might prove to be helpful.                                          #
         #######################################################################
-        sample_mean = np.mean(x)
-        sample_var = np.var(x)
-        running_mean = momentum * running_mean + (1 - momentum) * sample_mean
-        running_var = momentum * running_var + (1 - momentum) * sample_var
+        sample_mean = np.mean(x,axis=0)
+        sample_var = np.var(x,axis=0)
 
-        out = np.multiply(gamma, (x - running_mean)/((running_var + eps)**0.5)) + beta
+        out = np.multiply(gamma, (x - sample_mean)/((sample_var + eps)**0.5)) + beta
+
+        running_mean = momentum * running_mean + (1 - momentum) * sample_mean
+        running_var = momentum * running_var + (1 - momentum) * sample_var      
 
         cache = (x, gamma, beta, bn_param)
         #######################################################################
@@ -290,7 +291,8 @@ def dropout_forward(x, dropout_param):
         # TODO: Implement training phase forward pass for inverted dropout.   #
         # Store the dropout mask in the mask variable.                        #
         #######################################################################
-        mask = (x<p)
+        tmp = np.random.uniform(size=x.shape)
+        mask = (tmp<p)
         out = np.multiply(mask, x)
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -299,7 +301,7 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # TODO: Implement the test phase forward pass for inverted dropout.   #
         #######################################################################
-        pass
+        out = x * p
         #######################################################################
         #                            END OF YOUR CODE                         #
         #######################################################################
@@ -362,7 +364,7 @@ def conv_forward(x, w):
     F, _, HH, WW = w.shape
     H_out = H - HH + 1
     W_out = W - WW + 1
-    out = np.zeros((N,F,HH,WW))
+    out = np.zeros((N,F,H_out,W_out))
 
     for i in range(N):
         for j in range(H_out):
@@ -400,10 +402,27 @@ def conv_backward(dout, cache):
     F, _, HH, WW = w.shape
     _, _, H_out, W_out = dout.shape
 
-    for h in range(H_out):
-        for w in range(W_out):
-            dx[:,:,h:h+HH,w:w+WW] += np.multiply(W, dout[:,:,h,w])
-            dW += np.multiply(x[:,:,h:h+HH, w:w+WW], dout[:,:,h,w])
+    # for i in range(H_out):
+    #     for j in range(W_out):
+    #         dx[:,:,i:i+HH,j:j+WW] += np.multiply(w, dout[:,:,i,j])
+    #         dw += np.multiply(x[:,:,i:i+HH, j:j+WW], dout[:,:,i,j])
+
+    dw = np.zeros(w.shape)
+    for f in range(F):
+        for j in range(HH):
+            for k in range(WW):
+                local = x[:,:,j:j+H_out,k:k+W_out]
+                for c in range(C):
+                    dw[f,c,j,k] += np.sum(np.multiply(local[:,c,:,:],dout[:,f,:,:]))
+    
+    dx = np.zeros(x.shape)
+    for i in range(N):
+        w_tmp = np.pad(w, [(0, 0), (0, 0), (H_out-1, H_out-1), (W_out-1, W_out-1)], 'constant')
+        for j in range(H):
+            for k in range(W):
+                local = w_tmp[:,:,j:j+H_out,k:k+W_out]
+                for c in range(C):
+                    dx[i,c,j,k] += np.sum(np.multiply(local[:,c,:,:],dout[i,:,::-1,::-1]))
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -442,6 +461,7 @@ def max_pool_forward(x, pool_param):
     H_out = int(1 + (H - pool_height) / stride)
     W_out = int(1 + (W - pool_width) / stride)
 
+    out = np.zeros((N, C, H_out, W_out))
     for i in range(N):
         for h in range(H_out):
             for w in range(W_out):
@@ -499,7 +519,7 @@ def max_pool_backward(dout, cache):
                     pool_window = x[i,c,h_start:h_end,w_start:w_end]
                     max_idx = np.unravel_index(np.argmax(pool_window,axis=None), pool_window.shape)
                     mask = np.zeros(pool_window.shape)
-                    mask[max_idx] = dout[h,w]
+                    mask[max_idx] = dout[i,c,h,w]
 
                     dx[i,c,h_start:h_end,w_start:w_end] += mask
 
@@ -521,7 +541,7 @@ def svm_loss(x, y):
     """
     mask = ((1 - np.multiply(x, y)) > 0)
     loss = np.sum(np.multiply(mask, 1 - np.multiply(x, y)))/x.shape[0]
-    dx = np.multiply(mask, y)/x.shape[0]
+    dx = np.multiply(mask, -y)/x.shape[0]
     return loss, dx
 
 
@@ -557,9 +577,18 @@ def softmax_loss(x, y):
     """
     N, C = x.shape
     x_exp = np.exp(x)
-    softmax = x_exp/np.sum(x_exp)
-    y_mid = 1/(1+np.exp(-softmax))
-    loss = np.sum(-np.multiply(y,np.log(y_mid)) - np.multiply(1 - y,np.log(1-y_mid)))/N
-    dsoftmax = (y_mid - y)/N
-    dx = np.dot(np.subtract(np.identity(N), softmax), np.multiply(dsoftmax, softmax))
+    ones = np.ones((1,C))
+    softmax = np.divide(x_exp, np.dot(np.expand_dims(np.sum(x_exp,axis=1),axis=1),ones))
+    # y_mid = 1/(1+np.exp(-softmax))
+    
+    # y_extend = np.dot(np.expand_dims(y,axis=1), ones)
+    loss = 0
+    dx = np.copy(softmax)
+    for i in range(N):
+        loss -= np.log(softmax[i,y[i]])
+        dx[i,y[i]] -= 1
+    loss /= N
+
+    dx /= N
+
     return loss, dx
