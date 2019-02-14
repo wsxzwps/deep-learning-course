@@ -110,13 +110,18 @@ class ConvNet(object):
         bn1 = bn1.reshape(conv1_shape)
 
         act1, cache_act1 = relu_forward(bn1)
+
         pool1, cache_pool1 = max_pool_forward(act1, pool_param)        
 
         pool1_shape = pool1.shape
         pool1 = np.reshape(pool1, (pool1_shape[0], pool1_shape[1]*pool1_shape[2]*pool1_shape[3]))
 
         fc2, cache2 = fc_forward(pool1, W2, b2)
-        act2, cache_act2 = relu_forward(fc2)
+        
+        dropout_param = {'mode':mode,'p':0.9}
+        drop2, cache_drop2 = dropout_forward(fc2, dropout_param)
+
+        act2, cache_act2 = relu_forward(drop2)
 
         scores, cache3 = fc_forward(act2, W3, b3)
         
@@ -152,10 +157,13 @@ class ConvNet(object):
 
         dact2 = relu_backward(dx3, cache_act2)
 
-        dx2, dw2, db2 = fc_backward(dact2, cache2)
+        ddrop2 = dropout_backward(dact2, cache_drop2)
+
+        dx2, dw2, db2 = fc_backward(ddrop2, cache2)
         dw2 += self.reg * W2
         grads['W2'] = dw2
         grads['b2'] = db2
+
 
         dx2 = np.reshape(dx2, pool1_shape)
 
