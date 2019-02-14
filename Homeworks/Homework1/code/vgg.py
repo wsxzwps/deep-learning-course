@@ -20,33 +20,33 @@ class VGG(nn.Module):
             # Stage 1
             # TODO: convolutional layer, input channels 3, output channels 8, filter size 3
             # TODO: max-pooling layer, size 2
-            nn.Conv2d(3,8,3),
+            nn.Conv2d(3,8,kernel_size=3),
             nn.MaxPool2d(2),
             # Stage 2
             # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
             # TODO: max-pooling layer, size 2
-            nn.Conv2d(8,16,3),
+            nn.Conv2d(8,16,kernel_size=3),
             nn.MaxPool2d(2),
             # Stage 3
             # TODO: convolutional layer, input channels 16, output channels 32, filter size 3
             # TODO: convolutional layer, input channels 32, output channels 32, filter size 3
             # TODO: max-pooling layer, size 2
-            nn.Conv2d(16,32,3),
-            nn.Conv2d(32,32,3),
+            nn.Conv2d(16,32,kernel_size=3),
+            nn.Conv2d(32,32,kernel_size=3),
             nn.MaxPool2d(2),
             # Stage 4
             # TODO: convolutional layer, input channels 32, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
-            nn.Conv2d(32,64,3),
-            nn.Conv2d(64,64,3),
+            nn.Conv2d(32,64,kernel_size=3),
+            nn.Conv2d(64,64,kernel_size=3),
             nn.MaxPool2d(2),
             # Stage 5
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
-            nn.Conv2d(64,64,3),
-            nn.Conv2d(64,64,3),
+            nn.Conv2d(64,64,kernel_size=3),
+            nn.Conv2d(64,64,kernel_size=3),
             nn.MaxPool2d(2)
         )
 
