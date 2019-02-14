@@ -64,6 +64,9 @@ class ConvNet(object):
 
         gamma = np.ones(num_filters*channel*conv_out_shape*conv_out_shape)
         beta = np.zeros(num_filters*channel*conv_out_shape*conv_out_shape)
+
+        self.params['gamma'] = gamma
+        self.params['beta'] = beta
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -81,6 +84,7 @@ class ConvNet(object):
         W1 = self.params['W1']
         W2, b2 = self.params['W2'], self.params['b2']
         W3, b3 = self.params['W3'], self.params['b3']
+        gamma, beta = self.params['gamma'], self.params['beta']
         
         # pass conv_param to the forward pass for the convolutional layer
         filter_size = W1.shape[2]
