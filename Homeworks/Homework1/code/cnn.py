@@ -94,14 +94,14 @@ class ConvNet(object):
         # variable.                                                                #
         ############################################################################
         conv1, cache1 = conv_forward(X, W1)
-        pool1, cache_pool1 = max_pool_forward(conv1, pool_param)
         act1, cache_act1 = relu_forward(pool1)
+        pool1, cache_pool1 = max_pool_forward(act1, pool_param)        
 
-        act1_shape = act1.shape
+        pool1_shape = pool1.shape
         batch_size = X.shape[0]
-        act1 = np.reshape(act1, (act1_shape[0], act1_shape[1]*act1_shape[2]*act1_shape[3]))
+        pool1 = np.reshape(pool1, (pool1_shape[0], pool1_shape[1]*pool1_shape[2]*pool1_shape[3]))
 
-        fc2, cache2 = fc_forward(act1, W2, b2)
+        fc2, cache2 = fc_forward(pool1, W2, b2)
         act2, cache_act2 = relu_forward(fc2)
 
         scores, cache3 = fc_forward(act2, W3, b3)
@@ -143,13 +143,13 @@ class ConvNet(object):
         grads['W2'] = dw2
         grads['b2'] = db2
 
-        dx2 = np.reshape(dx2, act1_shape)
-
-        dact1 = relu_backward(dx2, cache_act1)
+        dx2 = np.reshape(dx2, pool1_shape)
 
         dpool1 = max_pool_backward(dx2, cache_pool1)
+        
+        dact1 = relu_backward(dpool1, cache_act1)
 
-        dx1, dw1 = conv_backward(dpool1, cache1)
+        dx1, dw1 = conv_backward(dact1, cache1)
         dw1 += self.reg * W1
         grads['W1'] = dw1
 
