@@ -82,7 +82,8 @@ class LogisticClassifier(object):
         fc1, cache1 = fc_forward(X,self.params['W1'],self.params['b1'])
         fc2, cache2 = None, None
         if 'W2' in self.params:
-            scores, cache2 = fc_forward(fc1, self.params['W2'], self.params['b2'])
+            act1, cache_act1 = relu_forward(fc1)
+            scores, cache2 = fc_forward(act1, self.params['W2'], self.params['b2'])
         else:
             scores = fc1
         
@@ -114,7 +115,10 @@ class LogisticClassifier(object):
             dw2 += self.reg * self.params['W2']
             grads['W2'] = dw2
             grads['b2'] = db2
-            dx1, dw1, db1 = fc_backward(dx2, cache1)
+
+            dact1 = relu_backward(dx2, cache_act1)
+
+            dx1, dw1, db1 = fc_backward(dact1, cache1)
             dw1 += self.reg * self.params['W1']
             grads['W1'] = dw1
             grads['b1'] = db1

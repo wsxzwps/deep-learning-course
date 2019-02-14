@@ -42,7 +42,21 @@ class SoftmaxClassifier(object):
         # dictionary self.params, with fc weights                                  #
         # and biases using the keys 'W' and 'b'                                    #
         ############################################################################
-        pass
+        if hidden_dim:
+            w1 = np.random.normal(scale=weight_scale,size=(input_dim,hidden_dim))
+            b1 = np.zeros(hidden_dim)
+            self.params['W1'] = w1
+            self.params['b1'] = b1
+
+            w2 = np.random.normal(scale=weight_scale,size=(hidden_dim,num_classes))
+            b2 = np.zeros(num_classes)
+            self.params['W2'] = w2
+            self.params['b2'] = b2
+        else:
+            w1 = np.random.normal(scale=weight_scale,size=(input_dim,num_classes))
+            b1 = np.zeros(num_classes)
+            self.params['W1'] = w1
+            self.params['b1'] = b1  
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -72,7 +86,14 @@ class SoftmaxClassifier(object):
         # TODO: Implement the forward pass for the one-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
-        pass
+        fc1, cache1 = fc_forward(X,self.params['W1'],self.params['b1'])
+        fc2, cache2 = None, None
+        if 'W2' in self.params:
+            act1, cache_act1 = relu_forward(fc1)
+            scores, cache2 = fc_forward(act1, self.params['W2'], self.params['b2'])
+        else:
+            scores = fc1
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -92,7 +113,29 @@ class SoftmaxClassifier(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+        loss, dloss = softmax_loss(scores, y)
+
+        l2w1 = np.sum(np.square(self.params['W1']))
+        loss += 0.5 * self.reg * l2w1
+        if 'W2' in self.params:
+            l2w2 = np.sum(np.square(self.params['W2']))
+            loss += 0.5 * self.reg * l2w2
+            dx2, dw2, db2 = fc_backward(dloss, cache2)
+            dw2 += self.reg * self.params['W2']
+            grads['W2'] = dw2
+            grads['b2'] = db2
+
+            dact1 = relu_backward(dx2, cache_act1)
+
+            dx1, dw1, db1 = fc_backward(dact1, cache1)
+            dw1 += self.reg * self.params['W1']
+            grads['W1'] = dw1
+            grads['b1'] = db1
+        else:
+            dx1, dw1, db1 = fc_backward(dloss, cache1)
+            dw1 += self.reg * self.params['W1']
+            grads['W1'] = dw1
+            grads['b1'] = db1
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
