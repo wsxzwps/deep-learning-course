@@ -62,6 +62,8 @@ class ConvNet(object):
         self.params['W3'] = w3
         self.params['b3'] = b3
 
+        gamma = np.ones(num_filters*channel*conv_out_shape*conv_out_shape)
+        beta = np.zeros(num_filters*channel*conv_out_shape*conv_out_shape)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -94,7 +96,20 @@ class ConvNet(object):
         # variable.                                                                #
         ############################################################################
         conv1, cache1 = conv_forward(X, W1)
-        act1, cache_act1 = relu_forward(conv1)
+
+        conv1_shape = conv1.shape
+        conv1 = np.reshape(conv1, (conv1_shape[0], conv1_shape[1]*conv1_shape[2]*conv1_shape[3]))
+
+        if y is None:
+            mode = 'test'
+        else:
+            mode = 'train'
+        bn_param = {'mode':mode,'eps':1e-5,'momentum':0.9}
+        bn1, cache_bn1 = batchnorm_forward(conv1,gamma,beta, bn_param)
+
+        bn1 = bn1.reshape(conv1_shape)
+
+        act1, cache_act1 = relu_forward(bn1)
         pool1, cache_pool1 = max_pool_forward(act1, pool_param)        
 
         pool1_shape = pool1.shape
@@ -147,6 +162,12 @@ class ConvNet(object):
         dpool1 = max_pool_backward(dx2, cache_pool1)
         
         dact1 = relu_backward(dpool1, cache_act1)
+
+        dact1 = np.reshape(dact1, conv1_shape)
+
+        dbn1, dgamma, dbeta = batchnorm_backward(dact1, cache_bn1)
+        grads['gamma'] = dgamma
+        grads['beta'] = dbeta
 
         dx1, dw1 = conv_backward(dact1, cache1)
         dw1 += self.reg * W1
