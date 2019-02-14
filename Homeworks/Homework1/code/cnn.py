@@ -99,8 +99,7 @@ class ConvNet(object):
 
         act1_shape = act1.shape
         batch_size = X.shape[0]
-        act1 = act1.flatten()
-        act1 = np.reshape(act1, (batch_size, act1.shape[0]//batch_size))
+        act1 = np.reshape(act1, (act1_shape[0], act1_shape[1]*act1_shape[2]*act1_shape[3]))
 
         fc2, cache2 = fc_forward(act1, W2, b2)
         act2, cache_act2 = relu_forward(fc2)
@@ -148,7 +147,7 @@ class ConvNet(object):
 
         dact1 = relu_backward(dx2, cache_act1)
 
-        dpool1 = max_pool_backward(dact1, cache_pool1)
+        dpool1 = max_pool_backward(dx2, cache_pool1)
 
         dx1, dw1 = conv_backward(dpool1, cache1)
         dw1 += self.reg * W1
