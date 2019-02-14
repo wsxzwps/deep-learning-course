@@ -2,7 +2,7 @@ import pickle
 from solver import *
 from cnn import *
 
-with open('/home/ruoyaow/Downloads/mnist.pkl', 'rb') as f:
+with open('/home/ruoyaow/mnist.pkl', 'rb') as f:
     train_set, val_set, test_set = pickle.load(f,encoding='latin1')
 
 train_data = np.array(train_set[0])
@@ -33,7 +33,7 @@ model = ConvNet(hidden_dim=500, weight_scale=0.1, reg=0.01)
 solver = Solver(model, data,
                 update_rule='sgd',
                 optim_config={
-                'learning_rate': 0.01,
+                'learning_rate': 0.05,
                 },
                 num_epochs=10, batch_size=100,
                 print_every=10)
