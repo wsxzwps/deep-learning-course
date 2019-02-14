@@ -78,6 +78,7 @@ def train(trainloader, net, criterion, optimizer, device):
             scores = net.forward(images)
             loss = criterion(scores,labels)
             loss.backward()
+            optimizer.step()
             # print statistics
             # running_loss += loss.item()
             if i % 100 == 99:    # print every 2000 mini-batches
