@@ -94,7 +94,7 @@ class ConvNet(object):
         # variable.                                                                #
         ############################################################################
         conv1, cache1 = conv_forward(X, W1)
-        act1, cache_act1 = relu_forward(pool1)
+        act1, cache_act1 = relu_forward(conv1)
         pool1, cache_pool1 = max_pool_forward(act1, pool_param)        
 
         pool1_shape = pool1.shape
