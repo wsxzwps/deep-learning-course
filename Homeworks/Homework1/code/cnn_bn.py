@@ -175,13 +175,15 @@ class ConvNet(object):
         
         dact1 = relu_backward(dpool1, cache_act1)
 
-        dact1 = np.reshape(dact1, conv1_shape)
+        dact1 = np.reshape(dact1, conv1.shape)
 
         dbn1, dgamma, dbeta = batchnorm_backward(dact1, cache_bn1)
         grads['gamma'] = dgamma
         grads['beta'] = dbeta
 
-        dx1, dw1 = conv_backward(dact1, cache1)
+        dbn1 = np.reshape(dbn1, conv1_shape)
+
+        dx1, dw1 = conv_backward(dbn1, cache1)
         dw1 += self.reg * W1
         grads['W1'] = dw1
 
